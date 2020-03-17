@@ -38,6 +38,13 @@ static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_GAP_APPEARANCE, &appearance, sizeof(appearance))
 };
 
+static const struct bt_le_adv_param param = {
+	.id = 0,
+	.options = BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME | BT_LE_ADV_OPT_USE_IDENTITY,
+	.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
+	.interval_max = BT_GAP_ADV_FAST_INT_MAX_2
+};
+
 static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
@@ -73,7 +80,7 @@ static void bt_ready(int err)
 		settings_load();
 	}
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	err = bt_le_adv_start(&param, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		LOG_ERR("Advertising failed to start (err %d)", err);
 		return;
