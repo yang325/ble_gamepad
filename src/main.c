@@ -51,6 +51,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 		LOG_ERR("Connection failed (err %u)", err);
 	} else {
 		LOG_INF("Connected");
+		hid_reset();
 	}
 }
 

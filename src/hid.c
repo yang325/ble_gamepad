@@ -15,7 +15,7 @@
 #include <misc/printk.h>
 #include <misc/byteorder.h>
 #include <zephyr.h>
-
+#include <logging/log.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
@@ -38,17 +38,26 @@ struct hids_report {
 	u8_t type; /* report type */
 } __packed;
 
+enum {
+	HIDS_INPUT = 0x01,
+	HIDS_OUTPUT = 0x02,
+	HIDS_FEATURE = 0x03,
+};
+
+enum {
+	HIDS_PROTOCOL_MODE_BOOT = 0x00,
+	HIDS_PROTOCOL_MODE_REPORT = 0x01,
+};
+
+LOG_MODULE_REGISTER(bt_svc_hid);
+
 static struct hids_info info = {
 	.version = 0x0000,
 	.code = 0x00,
 	.flags = HIDS_NORMALLY_CONNECTABLE,
 };
 
-enum {
-	HIDS_INPUT = 0x01,
-	HIDS_OUTPUT = 0x02,
-	HIDS_FEATURE = 0x03,
-};
+static uint8_t mode;
 
 static struct hids_report input = {
 	.id = 0x01,
@@ -92,8 +101,28 @@ static ssize_t read_info(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
 			  u16_t len, u16_t offset)
 {
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, attr->user_data,
-				 sizeof(struct hids_info));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, attr->user_data, sizeof(info));
+}
+
+static ssize_t read_mode(struct bt_conn *conn,
+			  const struct bt_gatt_attr *attr, void *buf,
+			  u16_t len, u16_t offset)
+{
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, attr->user_data, sizeof(mode));
+}
+
+static ssize_t write_mode(struct bt_conn *conn,
+			  const struct bt_gatt_attr *attr, const void *buf, u16_t len,
+			  u16_t offset, u8_t flags)
+{
+	if (offset + len > sizeof(mode)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	memcpy(&mode + offset, buf, len);
+	LOG_INF("Current mode is %s", (HIDS_PROTOCOL_MODE_BOOT == mode) ? "boot" : "report");
+
+	return len;
 }
 
 static ssize_t read_report_map(struct bt_conn *conn,
@@ -145,6 +174,8 @@ static struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_HIDS),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_INFO, BT_GATT_CHRC_READ,
 					BT_GATT_PERM_READ, read_info, NULL, &info),
+	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_PROTOCOL_MODE, BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE_WITHOUT_RESP,
+					BT_GATT_PERM_READ | BT_GATT_PERM_WRITE, read_mode, write_mode, &mode),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_REPORT_MAP, BT_GATT_CHRC_READ,
 					BT_GATT_PERM_READ, read_report_map, NULL, NULL),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_REPORT,
@@ -162,7 +193,19 @@ static struct bt_gatt_attr attrs[] = {
 
 static struct bt_gatt_service hid_svc = BT_GATT_SERVICE(attrs);
 
+void hid_reset(void)
+{
+	mode = HIDS_PROTOCOL_MODE_REPORT;
+}
+
 void hid_init(void)
 {
-	bt_gatt_service_register(&hid_svc);
+	int err;
+
+	hid_reset();
+	err = bt_gatt_service_register(&hid_svc);
+	if (err) {
+		LOG_ERR("HID service register failed (err %d)", err);
+	}
+	LOG_INF("Registering HID service successfully");
 }

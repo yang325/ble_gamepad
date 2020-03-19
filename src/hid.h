@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 void hid_init(void);
+void hid_reset(void);
 
 #ifdef __cplusplus
 }
