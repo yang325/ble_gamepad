@@ -49,6 +49,11 @@ enum {
 	HIDS_PROTOCOL_MODE_REPORT = 0x01,
 };
 
+enum {
+	HIDS_HOST_STATE_SUSPEND = 0x00,
+	HIDS_HOST_STATE_EXIT_SUSPEND = 0x01,
+};
+
 LOG_MODULE_REGISTER(bt_svc_hid);
 
 static struct hids_info info = {
@@ -115,11 +120,17 @@ static ssize_t write_mode(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, const void *buf, u16_t len,
 			  u16_t offset, u8_t flags)
 {
+	u8_t *value = attr->user_data;
+
 	if (offset + len > sizeof(mode)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	memcpy(&mode + offset, buf, len);
+	memcpy(value + offset, buf, len);
+	if (HIDS_PROTOCOL_MODE_BOOT != mode && HIDS_PROTOCOL_MODE_REPORT != mode) {
+		LOG_ERR("Unknown protocal mode %d", mode);
+		mode = HIDS_PROTOCOL_MODE_REPORT;
+	}
 	LOG_INF("Current mode is %s", (HIDS_PROTOCOL_MODE_BOOT == mode) ? "boot" : "report");
 
 	return len;
@@ -165,6 +176,11 @@ static ssize_t write_ctrl_point(struct bt_conn *conn,
 	}
 
 	memcpy(value + offset, buf, len);
+	if (HIDS_HOST_STATE_SUSPEND != ctrl_point && HIDS_HOST_STATE_EXIT_SUSPEND != ctrl_point) {
+		LOG_ERR("Unknown control command %d", ctrl_point);
+		ctrl_point = HIDS_HOST_STATE_EXIT_SUSPEND;
+	}
+	LOG_INF("HID Host is %s the Suspend State", (HIDS_HOST_STATE_SUSPEND == ctrl_point) ? "entering" : "exiting");
 
 	return len;
 }
