@@ -212,6 +212,7 @@ static struct bt_gatt_service hid_svc = BT_GATT_SERVICE(attrs);
 void hid_reset(void)
 {
 	mode = HIDS_PROTOCOL_MODE_REPORT;
+	ctrl_point = HIDS_HOST_STATE_EXIT_SUSPEND;
 }
 
 void hid_init(void)
@@ -222,6 +223,7 @@ void hid_init(void)
 	err = bt_gatt_service_register(&hid_svc);
 	if (err) {
 		LOG_ERR("HID service register failed (err %d)", err);
+		return;
 	}
 	LOG_INF("Registering HID service successfully");
 }
