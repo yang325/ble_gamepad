@@ -47,12 +47,25 @@ static const struct bt_le_adv_param param = {
 
 static void connected(struct bt_conn *conn, u8_t err)
 {
+	struct bt_conn_info conn_info;
+	char addr[BT_ADDR_LE_STR_LEN];
+
 	if (err) {
 		LOG_ERR("Connection failed (err %u)", err);
-	} else {
-		LOG_INF("Connected");
-		hid_reset();
+		return;
 	}
+	hid_reset();
+
+	err = bt_conn_get_info(conn, &conn_info);
+	if (err) {
+		LOG_ERR("Get connection info failed (err %u)", err);
+		return;
+	}
+
+	bt_addr_le_to_str(conn_info.le.dst, addr, sizeof(addr));
+	LOG_INF("Connected with %s", log_strdup(addr));
+	bt_addr_le_to_str(conn_info.le.src, addr, sizeof(addr));
+	LOG_INF("Local device use %s", log_strdup(addr));
 }
 
 static void disconnected(struct bt_conn *conn, u8_t reason)
@@ -96,7 +109,7 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	LOG_INF("Passkey for %s: %06u", addr, passkey);
+	LOG_INF("Passkey for %s: %06u", log_strdup(addr), passkey);
 }
 
 static void auth_cancel(struct bt_conn *conn)
@@ -105,7 +118,7 @@ static void auth_cancel(struct bt_conn *conn)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	LOG_INF("Pairing cancelled: %s", addr);
+	LOG_INF("Pairing cancelled: %s", log_strdup(addr));
 }
 
 static struct bt_conn_auth_cb auth_cb_display = {
