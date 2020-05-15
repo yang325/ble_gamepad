@@ -47,7 +47,6 @@ static const struct bt_le_adv_param param = {
 
 static void connected(struct bt_conn *conn, u8_t err)
 {
-	struct bt_conn_info conn_info;
 	char addr[BT_ADDR_LE_STR_LEN];
 
 	if (err) {
@@ -56,21 +55,13 @@ static void connected(struct bt_conn *conn, u8_t err)
 	}
 	hid_reset();
 
-	err = bt_conn_get_info(conn, &conn_info);
-	if (err) {
-		LOG_ERR("Get connection info failed (err %u)", err);
-		return;
-	}
-
-	bt_addr_le_to_str(conn_info.le.dst, addr, sizeof(addr));
-	LOG_INF("Connected with %s", log_strdup(addr));
-	bt_addr_le_to_str(conn_info.le.src, addr, sizeof(addr));
-	LOG_INF("Local device use %s", log_strdup(addr));
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	LOG_INF("Connect handle %u, address %s", bt_conn_index(conn), log_strdup(addr));
 }
 
 static void disconnected(struct bt_conn *conn, u8_t reason)
 {
-	LOG_INF("Disconnected (reason %u)", reason);
+	LOG_INF("Disconnect handle %u (reason %u)", bt_conn_index(conn), reason);
 }
 
 static struct bt_conn_cb conn_callbacks = {
