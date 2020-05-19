@@ -39,7 +39,7 @@ static const struct bt_data sd[] = {
 };
 
 static const struct bt_le_adv_param param = {
-	.id = 0,
+	.id = BT_ID_DEFAULT,
 	.options = BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME | BT_LE_ADV_OPT_USE_IDENTITY,
 	.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
 	.interval_max = BT_GAP_ADV_FAST_INT_MAX_2
@@ -78,12 +78,12 @@ static void bt_ready(int err)
 
 	LOG_INF("Bluetooth initialized");
 
-	appearance = CONFIG_BT_DEVICE_APPEARANCE;
-	hid_init();
-
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
 	}
+
+	appearance = CONFIG_BT_DEVICE_APPEARANCE;
+	hid_init();
 
 	err = bt_le_adv_start(&param, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
