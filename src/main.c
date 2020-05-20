@@ -26,7 +26,7 @@
 
 LOG_MODULE_REGISTER(main);
 
-static uint16_t appearance;
+static uint16_t appearance = CONFIG_BT_DEVICE_APPEARANCE;
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -82,7 +82,7 @@ static void bt_ready(int err)
 		settings_load();
 	}
 
-	appearance = CONFIG_BT_DEVICE_APPEARANCE;
+	/* Initilize services*/
 	hid_init();
 
 	err = bt_le_adv_start(&param, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
