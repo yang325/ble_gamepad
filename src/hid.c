@@ -219,7 +219,6 @@ void hid_init(void)
 {
 	int err;
 
-	hid_reset();
 	err = bt_gatt_service_register(&hid_svc);
 	if (err) {
 		LOG_ERR("HID service register failed (err %d)", err);

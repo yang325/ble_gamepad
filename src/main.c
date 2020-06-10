@@ -25,25 +25,7 @@
 #include "hid.h"
 
 LOG_MODULE_REGISTER(main);
-
-static uint16_t appearance = CONFIG_BT_DEVICE_APPEARANCE;
-
-static const struct bt_data ad[] = {
-	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x12, 0x18)
-};
-/* Set Scan Response data */
-static const struct bt_data sd[] = {
-	BT_DATA_BYTES(BT_DATA_TX_POWER, 0x00),
-	BT_DATA(BT_DATA_GAP_APPEARANCE, &appearance, sizeof(appearance))
-};
-
-static const struct bt_le_adv_param param = {
-	.id = BT_ID_DEFAULT,
-	.options = BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME | BT_LE_ADV_OPT_USE_IDENTITY,
-	.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
-	.interval_max = BT_GAP_ADV_FAST_INT_MAX_2
-};
+K_SEM_DEFINE(state_sem, 0, 1);
 
 static void connected(struct bt_conn *conn, u8_t err)
 {
@@ -53,15 +35,16 @@ static void connected(struct bt_conn *conn, u8_t err)
 		LOG_ERR("Connection failed (err %u)", err);
 		return;
 	}
-	hid_reset();
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-	LOG_INF("Connect handle %u, address %s", bt_conn_index(conn), log_strdup(addr));
+	LOG_INF("Connect index %u, address %s", bt_conn_index(conn), log_strdup(addr));
 }
 
 static void disconnected(struct bt_conn *conn, u8_t reason)
 {
-	LOG_INF("Disconnect handle %u (reason %u)", bt_conn_index(conn), reason);
+	LOG_INF("Disconnect index %u (reason %u)", bt_conn_index(conn), reason);
+	hid_reset();
+	k_sem_give(&state_sem);
 }
 
 static struct bt_conn_cb conn_callbacks = {
@@ -71,6 +54,22 @@ static struct bt_conn_cb conn_callbacks = {
 
 static void bt_ready(int err)
 {
+	struct bt_data ad[] = {
+		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+		BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x12, 0x18)
+	};
+	/* Set Scan Response data */
+	struct bt_data sd[] = {
+		BT_DATA_BYTES(BT_DATA_TX_POWER, 0x00),
+		BT_DATA_BYTES(BT_DATA_GAP_APPEARANCE, CONFIG_BT_DEVICE_APPEARANCE & 0xFF, (CONFIG_BT_DEVICE_APPEARANCE >> 8) & 0xFF)
+	};
+	struct bt_le_adv_param param = {
+		.id = BT_ID_DEFAULT,
+		.options = BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME | BT_LE_ADV_OPT_USE_IDENTITY | BT_LE_ADV_OPT_ONE_TIME,
+		.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
+		.interval_max = BT_GAP_ADV_FAST_INT_MAX_2
+	};
+
 	if (err) {
 		LOG_ERR("Bluetooth init failed (err %d)", err);
 		return;
@@ -84,6 +83,7 @@ static void bt_ready(int err)
 
 	/* Initilize services*/
 	hid_init();
+	hid_reset();
 
 	err = bt_le_adv_start(&param, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
@@ -118,9 +118,26 @@ static struct bt_conn_auth_cb auth_cb_display = {
 	.cancel = auth_cancel,
 };
 
+static void output_bond_info(const struct bt_bond_info *info, void *user_data)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(&info->addr, addr, sizeof(addr));
+	LOG_INF("Got bond device: %s", log_strdup(addr));
+	memcpy(user_data, &info->addr, sizeof(bt_addr_le_t));
+}
+
 void main(void)
 {
 	int err;
+	struct bt_conn *conn;
+	bt_addr_le_t peer_addr;
+	struct bt_le_adv_param param = {
+		.id = BT_ID_DEFAULT,
+		.options = BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY | BT_LE_ADV_OPT_DIR_ADDR_RPA,
+		.interval_min = BT_GAP_ADV_SLOW_INT_MIN,
+		.interval_max = BT_GAP_ADV_SLOW_INT_MAX
+	};
 
 	err = bt_enable(bt_ready);
 	if (err) {
@@ -135,15 +152,24 @@ void main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		k_sleep(MSEC_PER_SEC);
-
-		/* Current Time Service updates only when time is changed */
-		//cts_notify();
-
-		/* Heartrate measurements simulation */
-		//hrs_notify();
-
-		/* Battery level simulation */
-		//bas_notify();
+		err = k_sem_take(&state_sem, K_FOREVER);
+		if (err) {
+			LOG_WRN("Take semaphore failed (err %d)", err);
+			continue;
+		}
+		bt_addr_le_copy(&peer_addr, BT_ADDR_LE_ANY);
+		bt_foreach_bond(BT_ID_DEFAULT, output_bond_info, &peer_addr);
+		if (bt_addr_le_cmp(&peer_addr, BT_ADDR_LE_ANY)) {
+			conn = bt_conn_create_slave_le(&peer_addr, &param);
+			if (NULL == conn) {
+				LOG_WRN("Failed to start directed advertising");
+			} else {
+				LOG_INF("Started directed advertising");
+				/* unref connection obj in advance as app user */
+				bt_conn_unref(conn);
+			}
+		} else {
+			LOG_INF("No bond device found");
+		}
 	}
 }
