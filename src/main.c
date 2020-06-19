@@ -65,7 +65,7 @@ static void bt_ready(int err)
 	};
 	struct bt_le_adv_param param = {
 		.id = BT_ID_DEFAULT,
-		.options = BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME | BT_LE_ADV_OPT_USE_IDENTITY | BT_LE_ADV_OPT_ONE_TIME,
+		.options = BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME | BT_LE_ADV_OPT_ONE_TIME,
 		.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
 		.interval_max = BT_GAP_ADV_FAST_INT_MAX_2
 	};
@@ -134,7 +134,7 @@ void main(void)
 	bt_addr_le_t peer_addr;
 	struct bt_le_adv_param param = {
 		.id = BT_ID_DEFAULT,
-		.options = BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY | BT_LE_ADV_OPT_DIR_ADDR_RPA,
+		.options = BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY | BT_LE_ADV_OPT_DIR_ADDR_RPA | BT_LE_ADV_OPT_USE_NAME,
 		.interval_min = BT_GAP_ADV_SLOW_INT_MIN,
 		.interval_max = BT_GAP_ADV_SLOW_INT_MAX
 	};
