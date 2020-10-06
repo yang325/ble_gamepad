@@ -10,10 +10,11 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <misc/printk.h>
-#include <misc/byteorder.h>
-#include <zephyr.h>
+#include <sys/printk.h>
+#include <sys/byteorder.h>
 #include <logging/log.h>
+#include <zephyr.h>
+
 #include <settings/settings.h>
 
 #include <bluetooth/bluetooth.h>
@@ -26,7 +27,7 @@
 
 LOG_MODULE_REGISTER(main);
 
-static void connected(struct bt_conn *conn, u8_t err)
+static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
@@ -39,7 +40,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 	LOG_INF("Connect index %u, address %s", bt_conn_index(conn), log_strdup(addr));
 }
 
-static void disconnected(struct bt_conn *conn, u8_t reason)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	LOG_INF("Disconnect index %u (reason %u)", bt_conn_index(conn), reason);
 	hid_reset();
@@ -81,7 +82,6 @@ static void bt_ready(int err)
 
 	/* Initilize services*/
 	hid_init();
-	hid_reset();
 
 	err = bt_le_adv_start(&param, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
@@ -133,6 +133,6 @@ void main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		k_sleep(1000);
+		k_sleep(K_MSEC(1000));
 	}
 }
