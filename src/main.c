@@ -110,10 +110,19 @@ static void auth_cancel(struct bt_conn *conn)
 	LOG_INF("Pairing cancelled: %s", log_strdup(addr));
 }
 
+static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	LOG_INF("Pairing completed: %s", log_strdup(addr));
+}
+
 static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
-	.passkey_entry = NULL,
 	.cancel = auth_cancel,
+	.pairing_complete = auth_pairing_complete,
 };
 
 void main(void)
