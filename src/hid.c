@@ -13,7 +13,6 @@
 #include <string.h>
 #include <errno.h>
 #include <zephyr.h>
-#include <logging/log.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
@@ -53,12 +52,10 @@ enum {
 	HIDS_HOST_STATE_EXIT_SUSPEND = 0x01,
 };
 
-LOG_MODULE_REGISTER(bt_svc_hid);
-
 static struct hids_info info = {
-	.version = 0x0000,
-	.code = 0x00,
-	.flags = HIDS_NORMALLY_CONNECTABLE,
+	.version = 0x101,
+	.code = 0x00, /* Not Supported */
+	.flags = HIDS_REMOTE_WAKE | HIDS_NORMALLY_CONNECTABLE,
 };
 
 static uint8_t mode;
@@ -99,7 +96,6 @@ static uint8_t report_map[] = {
 	0xC0,       /* End Collection */
 };
 
-
 static ssize_t read_info(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr, void *buf,
 			  uint16_t len, uint16_t offset)
@@ -126,10 +122,10 @@ static ssize_t write_mode(struct bt_conn *conn,
 
 	memcpy(value + offset, buf, len);
 	if (HIDS_PROTOCOL_MODE_BOOT != mode && HIDS_PROTOCOL_MODE_REPORT != mode) {
-		LOG_ERR("Unknown protocal mode %d", mode);
+		printk("[E] Unknown protocal mode %d\n", mode);
 		mode = HIDS_PROTOCOL_MODE_REPORT;
 	}
-	LOG_INF("Current mode is %s", (HIDS_PROTOCOL_MODE_BOOT == mode) ? "boot" : "report");
+	printk("[D] Current mode is %s", (HIDS_PROTOCOL_MODE_BOOT == mode) ? "boot" : "report");
 
 	return len;
 }
@@ -138,8 +134,7 @@ static ssize_t read_report_map(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, report_map,
-				 sizeof(report_map));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, attr->user_data, sizeof(report_map));
 }
 
 static ssize_t read_report(struct bt_conn *conn,
@@ -175,10 +170,10 @@ static ssize_t write_ctrl_point(struct bt_conn *conn,
 
 	memcpy(value + offset, buf, len);
 	if (HIDS_HOST_STATE_SUSPEND != ctrl_point && HIDS_HOST_STATE_EXIT_SUSPEND != ctrl_point) {
-		LOG_ERR("Unknown control command %d", ctrl_point);
+		printk("[W] Unknown control command %d\n", ctrl_point);
 		ctrl_point = HIDS_HOST_STATE_EXIT_SUSPEND;
 	}
-	LOG_INF("HID Host is %s the Suspend State", (HIDS_HOST_STATE_SUSPEND == ctrl_point) ? "entering" : "exiting");
+	printk("[D] HID Host is %s the Suspend State\n", (HIDS_HOST_STATE_SUSPEND == ctrl_point) ? "entering" : "exiting");
 
 	return len;
 }
@@ -191,7 +186,7 @@ BT_GATT_SERVICE_DEFINE(hid_svc,
 	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_PROTOCOL_MODE, BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE_WITHOUT_RESP,
 					BT_GATT_PERM_READ | BT_GATT_PERM_WRITE, read_mode, write_mode, &mode),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_REPORT_MAP, BT_GATT_CHRC_READ,
-					BT_GATT_PERM_READ, read_report_map, NULL, NULL),
+					BT_GATT_PERM_READ, read_report_map, NULL, report_map),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_REPORT,
 					BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 					BT_GATT_PERM_READ_AUTHEN,
@@ -213,5 +208,5 @@ void hid_reset(void)
 
 void hid_init(void)
 {
-	LOG_INF("Registering HID service successfully");
+	printk("[D] Registering HID service successfully\n");
 }

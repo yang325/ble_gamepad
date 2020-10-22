@@ -12,7 +12,6 @@
 #include <errno.h>
 #include <sys/printk.h>
 #include <sys/byteorder.h>
-#include <logging/log.h>
 #include <zephyr.h>
 
 #include <settings/settings.h>
@@ -25,30 +24,49 @@
 
 #include "hid.h"
 
-LOG_MODULE_REGISTER(main);
-
 static void connected(struct bt_conn *conn, uint8_t err)
 {
+	int ret;
 	char addr[BT_ADDR_LE_STR_LEN];
+	struct bt_le_conn_param param = {
+		.interval_min = 12,
+		.interval_max = 16,
+		.latency = 0,
+		.timeout = 500,
+	};
 
 	if (err) {
-		LOG_ERR("Connection failed (err %u)", err);
+		printk("[E] Connection failed (err %u)\n", err);
 		return;
 	}
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-	LOG_INF("Connect index %u, address %s", bt_conn_index(conn), log_strdup(addr));
+	printk("[D] Connect index %u, address %s\n", bt_conn_index(conn), addr);
+
+	ret = bt_conn_le_param_update(conn, &param);
+	if (ret) {
+		printk("[E] Update parameter failed (err %d)\n", ret);
+		return;
+	}
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	LOG_INF("Disconnect index %u (reason %u)", bt_conn_index(conn), reason);
+	printk("[D] Disconnect index %u (reason %u)\n", bt_conn_index(conn), reason);
 	hid_reset();
+}
+
+static void param_updated(struct bt_conn *conn, uint16_t interval,
+						uint16_t latency, uint16_t timeout)
+{
+	printk("[D] LE conn %d param updated: interval %d, timeout %d, latency %d\n",
+			bt_conn_index(conn), interval, timeout, latency);
 }
 
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.le_param_updated = param_updated,
 };
 
 static void bt_ready(int err)
@@ -70,11 +88,11 @@ static void bt_ready(int err)
 	};
 
 	if (err) {
-		LOG_ERR("Bluetooth init failed (err %d)", err);
+		printk("[E] Bluetooth init failed (err %d)\n", err);
 		return;
 	}
 
-	LOG_INF("Bluetooth initialized");
+	printk("[D] Bluetooth initialized\n");
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
@@ -85,11 +103,11 @@ static void bt_ready(int err)
 
 	err = bt_le_adv_start(&param, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
-		LOG_ERR("Advertising failed to start (err %d)", err);
+		printk("[E] Advertising failed to start (err %d)\n", err);
 		return;
 	}
 
-	LOG_INF("Advertising successfully started");
+	printk("[D] Advertising successfully started\n");
 }
 
 void main(void)
@@ -98,7 +116,7 @@ void main(void)
 
 	err = bt_enable(bt_ready);
 	if (err) {
-		LOG_ERR("Bluetooth init failed (err %d)", err);
+		printk("[E] Bluetooth init failed (err %d)\n", err);
 		return;
 	}
 
