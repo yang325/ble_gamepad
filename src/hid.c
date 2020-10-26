@@ -20,6 +20,8 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
+#include "main.h"
+
 enum {
 	HIDS_REMOTE_WAKE = BIT(0),
 	HIDS_NORMALLY_CONNECTABLE = BIT(1),
@@ -122,10 +124,10 @@ static ssize_t write_mode(struct bt_conn *conn,
 
 	memcpy(value + offset, buf, len);
 	if (HIDS_PROTOCOL_MODE_BOOT != mode && HIDS_PROTOCOL_MODE_REPORT != mode) {
-		printk("[E] Unknown protocal mode %d\n", mode);
+		LOG_ERROR("Unknown protocal mode %d", mode);
 		mode = HIDS_PROTOCOL_MODE_REPORT;
 	}
-	printk("[D] Current mode is %s", (HIDS_PROTOCOL_MODE_BOOT == mode) ? "boot" : "report");
+	LOG_INFO("Current mode is %s", (HIDS_PROTOCOL_MODE_BOOT == mode) ? "boot" : "report");
 
 	return len;
 }
@@ -170,10 +172,10 @@ static ssize_t write_ctrl_point(struct bt_conn *conn,
 
 	memcpy(value + offset, buf, len);
 	if (HIDS_HOST_STATE_SUSPEND != ctrl_point && HIDS_HOST_STATE_EXIT_SUSPEND != ctrl_point) {
-		printk("[W] Unknown control command %d\n", ctrl_point);
+		LOG_WARNING("Unknown control command %d", ctrl_point);
 		ctrl_point = HIDS_HOST_STATE_EXIT_SUSPEND;
 	}
-	printk("[D] HID Host is %s the Suspend State\n", (HIDS_HOST_STATE_SUSPEND == ctrl_point) ? "entering" : "exiting");
+	LOG_INFO("HID Host is %s the Suspend State", (HIDS_HOST_STATE_SUSPEND == ctrl_point) ? "entering" : "exiting");
 
 	return len;
 }
@@ -208,5 +210,5 @@ void hid_reset(void)
 
 void hid_init(void)
 {
-	printk("[D] Registering HID service successfully\n");
+	LOG_INFO("Registering HID service successfully");
 }

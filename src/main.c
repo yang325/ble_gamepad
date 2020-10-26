@@ -23,6 +23,7 @@
 #include <bluetooth/gatt.h>
 
 #include "hid.h"
+#include "main.h"
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -36,30 +37,30 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	};
 
 	if (err) {
-		printk("[E] Connection failed (err %u)\n", err);
+		LOG_ERROR("Connection failed (err %u)", err);
 		return;
 	}
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-	printk("[D] Connect index %u, address %s\n", bt_conn_index(conn), addr);
+	LOG_INFO("Connect index %u, address %s", bt_conn_index(conn), addr);
+	hid_reset();
 
 	ret = bt_conn_le_param_update(conn, &param);
 	if (ret) {
-		printk("[E] Update parameter failed (err %d)\n", ret);
+		LOG_ERROR("Update parameter failed (err %d)", ret);
 		return;
 	}
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	printk("[D] Disconnect index %u (reason %u)\n", bt_conn_index(conn), reason);
-	hid_reset();
+	LOG_INFO("Disconnect index %u (reason %u)", bt_conn_index(conn), reason);
 }
 
 static void param_updated(struct bt_conn *conn, uint16_t interval,
 						uint16_t latency, uint16_t timeout)
 {
-	printk("[D] LE conn %d param updated: interval %d, timeout %d, latency %d\n",
+	LOG_INFO("LE conn %d param updated: interval %d, timeout %d, latency %d",
 			bt_conn_index(conn), interval, timeout, latency);
 }
 
@@ -88,11 +89,11 @@ static void bt_ready(int err)
 	};
 
 	if (err) {
-		printk("[E] Bluetooth init failed (err %d)\n", err);
+		LOG_ERROR("Bluetooth init failed (err %d)", err);
 		return;
 	}
 
-	printk("[D] Bluetooth initialized\n");
+	LOG_INFO("Bluetooth initialized");
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
@@ -103,11 +104,11 @@ static void bt_ready(int err)
 
 	err = bt_le_adv_start(&param, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
-		printk("[E] Advertising failed to start (err %d)\n", err);
+		LOG_ERROR("Advertising failed to start (err %d)", err);
 		return;
 	}
 
-	printk("[D] Advertising successfully started\n");
+	LOG_INFO("Advertising successfully started");
 }
 
 void main(void)
@@ -116,7 +117,7 @@ void main(void)
 
 	err = bt_enable(bt_ready);
 	if (err) {
-		printk("[E] Bluetooth init failed (err %d)\n", err);
+		LOG_ERROR("Bluetooth init failed (err %d)", err);
 		return;
 	}
 
