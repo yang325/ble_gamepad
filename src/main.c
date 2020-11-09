@@ -22,8 +22,9 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include "hid.h"
 #include "main.h"
+#include "hid.h"
+#include "board.h"
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
@@ -114,6 +115,9 @@ static void bt_ready(int err)
 void main(void)
 {
 	int err;
+
+	LOG_INFO("Initializing ...");
+	board_init();
 
 	err = bt_enable(bt_ready);
 	if (err) {

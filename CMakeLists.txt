@@ -7,6 +7,7 @@ project(peripheral)
 target_sources(app PRIVATE
   src/main.c
   src/hid.c
+  src/board.c
 )
 
 zephyr_library_include_directories($ENV{ZEPHYR_BASE}/samples/bluetooth)

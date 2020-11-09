@@ -70,9 +70,10 @@ static struct hids_report input = {
 static uint8_t simulate_input;
 static uint8_t ctrl_point;
 static uint8_t report_map[] = {
-	0x05, 0x01, /* Usage Page (Generic Desktop Ctrls) */
-	0x09, 0x02, /* Usage (Mouse) */
+	0x05, 0x01, /* Usage Page (Generic Desktop) */
+	0x09, 0x04, /* Usage (Joystick) */
 	0xA1, 0x01, /* Collection (Application) */
+	0x05, 0x01, /*   Usage Page (Generic Desktop) */
 	0x09, 0x01, /*   Usage (Pointer) */
 	0xA1, 0x00, /*   Collection (Physical) */
 	0x05, 0x09, /*     Usage Page (Button) */
