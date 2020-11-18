@@ -131,6 +131,7 @@ void main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		k_msleep(1000);
+		k_msleep(50);
+		board_button_scan();
 	}
 }
