@@ -31,6 +31,14 @@
 		};
 	};
 
+	rocker {
+		compatible = "voltage-divider";
+		io-channels = <&adc 2>, <&adc 3>;
+		power-gpios = <&gpio0 1 0>, <&gpio0 2 0>;
+		output-ohms = <180000>;
+		full-ohms = <(1500000 + 180000)>;
+	};
+
 	aliases {
 		sw0 = &buttonA;
 		sw1 = &buttonB;
@@ -40,4 +48,8 @@
 		sw5 = &buttonF;
 		sw6 = &buttonP;
 	};
+};
+
+&adc {
+	status = "okay";
 };

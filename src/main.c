@@ -131,7 +131,9 @@ void main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
+		axis_val_t raw_value = {0};
 		k_msleep(50);
 		board_button_scan();
+		board_rocker_read(&raw_value);
 	}
 }
