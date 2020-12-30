@@ -65,6 +65,35 @@ static void param_updated(struct bt_conn *conn, uint16_t interval,
 			bt_conn_index(conn), interval, timeout, latency);
 }
 
+static void button_callback(button_t button, action_t action)
+{
+	switch (button) {
+		case BOARD_BUTTON_KEY_A:
+			LOG_INFO("Button A %s at %u", (BUTTON_ACTION_PREASSED == action) ? "pressed" : "released", k_cycle_get_32());
+			break;
+		case BOARD_BUTTON_KEY_B:
+			LOG_INFO("Button B %s at %u", (BUTTON_ACTION_PREASSED == action) ? "pressed" : "released", k_cycle_get_32());
+			break;
+		case BOARD_BUTTON_KEY_C:
+			LOG_INFO("Button C %s at %u", (BUTTON_ACTION_PREASSED == action) ? "pressed" : "released", k_cycle_get_32());
+			break;
+		case BOARD_BUTTON_KEY_D:
+			LOG_INFO("Button D %s at %u", (BUTTON_ACTION_PREASSED == action) ? "pressed" : "released", k_cycle_get_32());
+			break;
+		case BOARD_BUTTON_KEY_E:
+			LOG_INFO("Button E %s at %u", (BUTTON_ACTION_PREASSED == action) ? "pressed" : "released", k_cycle_get_32());
+			break;
+		case BOARD_BUTTON_KEY_F:
+			LOG_INFO("Button F %s at %u", (BUTTON_ACTION_PREASSED == action) ? "pressed" : "released", k_cycle_get_32());
+			break;
+		case BOARD_BUTTON_KEY_P:
+			LOG_INFO("Button P %s at %u", (BUTTON_ACTION_PREASSED == action) ? "pressed" : "released", k_cycle_get_32());
+			break;
+		default:
+			break;
+	}
+}
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
@@ -117,7 +146,7 @@ void main(void)
 	int err;
 
 	LOG_INFO("Initializing ...");
-	board_init();
+	board_init(button_callback);
 
 	err = bt_enable(bt_ready);
 	if (err) {
@@ -131,9 +160,13 @@ void main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		axis_val_t raw_value = {0};
 		k_msleep(50);
 		board_button_scan();
-		board_rocker_read(&raw_value);
+		//LOG_INFO("Getting axis X value");
+		//board_rocker_read(BOARD_ROCKER_AXIS_X);
+		k_msleep(50);
+		board_button_scan();
+		//LOG_INFO("Getting axis Y value");
+		//board_rocker_read(BOARD_ROCKER_AXIS_Y);
 	}
 }

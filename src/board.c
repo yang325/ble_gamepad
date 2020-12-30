@@ -34,7 +34,7 @@ typedef struct {
         struct gpio_callback callback;
         int state;
     };
-} button_t;
+} button_key_t;
 
 typedef struct {
     const char *adc_name;
@@ -46,7 +46,7 @@ typedef struct {
 } rocker_axis_t;
 
 /* Button list with low latency */
-static button_t btn_list_1[] = {
+static button_key_t btn_list_1[] = {
     {
         .name = DT_GPIO_LABEL(BUTTON_C_NODE, gpios),
         .pin = DT_GPIO_PIN(BUTTON_C_NODE, gpios),
@@ -69,7 +69,7 @@ static button_t btn_list_1[] = {
     },
 };
 /* Button list with normal latency */
-static button_t btn_list_2[] = {
+static button_key_t btn_list_2[] = {
     {
         .name = DT_GPIO_LABEL(BUTTON_A_NODE, gpios),
         .pin = DT_GPIO_PIN(BUTTON_A_NODE, gpios),
@@ -104,11 +104,17 @@ static rocker_axis_t axis_y = {
     .pin = DT_GPIO_PIN_BY_IDX(ROCKER_NODE, power_gpios, 1),
     .pin_flag = DT_GPIO_FLAGS_BY_IDX(ROCKER_NODE, power_gpios, 1),
 };
+/* Global variable */
+static board_button_callback g_button_callback;
 
 static void board_button_handler(const struct device *dev, struct gpio_callback *cb,
 		                    uint32_t pins)
 {
     int ret;
+
+    if (NULL == g_button_callback) {
+        return;
+    }
 
     switch (pins) {
         case BIT(DT_GPIO_PIN(BUTTON_A_NODE, gpios)):
@@ -116,9 +122,9 @@ static void board_button_handler(const struct device *dev, struct gpio_callback 
             if (ret < 0) {
                 LOG_ERROR("Failed to get pin %d state (err %d)", DT_GPIO_PIN(BUTTON_A_NODE, gpios), ret);
             } else if (1 == ret) {
-                LOG_INFO("Button A pressed at %u", k_cycle_get_32());
+                g_button_callback(BOARD_BUTTON_KEY_A, BUTTON_ACTION_PREASSED);
             } else {
-                LOG_INFO("Button A released at %u", k_cycle_get_32());
+                g_button_callback(BOARD_BUTTON_KEY_A, BUTTON_ACTION_RELEASED);
             }
             break;
         case BIT(DT_GPIO_PIN(BUTTON_B_NODE, gpios)):
@@ -126,9 +132,9 @@ static void board_button_handler(const struct device *dev, struct gpio_callback 
             if (ret < 0) {
                 LOG_ERROR("Failed to get pin %d state (err %d)", DT_GPIO_PIN(BUTTON_B_NODE, gpios), ret);
             } else if (1 == ret) {
-                LOG_INFO("Button B pressed at %u", k_cycle_get_32());
+                g_button_callback(BOARD_BUTTON_KEY_B, BUTTON_ACTION_PREASSED);
             } else {
-                LOG_INFO("Button B released at %u", k_cycle_get_32());
+                g_button_callback(BOARD_BUTTON_KEY_B, BUTTON_ACTION_RELEASED);
             }
             break;
         case BIT(DT_GPIO_PIN(BUTTON_C_NODE, gpios)):
@@ -136,9 +142,9 @@ static void board_button_handler(const struct device *dev, struct gpio_callback 
             if (ret < 0) {
                 LOG_ERROR("Failed to get pin %d state (err %d)", DT_GPIO_PIN(BUTTON_C_NODE, gpios), ret);
             } else if (1 == ret) {
-                LOG_INFO("Button C pressed at %u", k_cycle_get_32());
+                g_button_callback(BOARD_BUTTON_KEY_C, BUTTON_ACTION_PREASSED);
             } else {
-                LOG_INFO("Button C released at %u", k_cycle_get_32());
+                g_button_callback(BOARD_BUTTON_KEY_C, BUTTON_ACTION_RELEASED);
             }
             break;
         case BIT(DT_GPIO_PIN(BUTTON_D_NODE, gpios)):
@@ -146,9 +152,9 @@ static void board_button_handler(const struct device *dev, struct gpio_callback 
             if (ret < 0) {
                 LOG_ERROR("Failed to get pin %d state (err %d)", DT_GPIO_PIN(BUTTON_D_NODE, gpios), ret);
             } else if (1 == ret) {
-                LOG_INFO("Button D pressed at %u", k_cycle_get_32());
+                g_button_callback(BOARD_BUTTON_KEY_D, BUTTON_ACTION_PREASSED);
             } else {
-                LOG_INFO("Button D released at %u", k_cycle_get_32());
+                g_button_callback(BOARD_BUTTON_KEY_D, BUTTON_ACTION_RELEASED);
             }
             break;
         case BIT(DT_GPIO_PIN(BUTTON_E_NODE, gpios)):
@@ -156,9 +162,9 @@ static void board_button_handler(const struct device *dev, struct gpio_callback 
             if (ret < 0) {
                 LOG_ERROR("Failed to get pin %d state (err %d)", DT_GPIO_PIN(BUTTON_E_NODE, gpios), ret);
             } else if (1 == ret) {
-                LOG_INFO("Button E pressed at %u", k_cycle_get_32());
+                g_button_callback(BOARD_BUTTON_KEY_E, BUTTON_ACTION_PREASSED);
             } else {
-                LOG_INFO("Button E released at %u", k_cycle_get_32());
+                g_button_callback(BOARD_BUTTON_KEY_E, BUTTON_ACTION_RELEASED);
             }
             break;
         case BIT(DT_GPIO_PIN(BUTTON_F_NODE, gpios)):
@@ -166,9 +172,9 @@ static void board_button_handler(const struct device *dev, struct gpio_callback 
             if (ret < 0) {
                 LOG_ERROR("Failed to get pin %d state (err %d)", DT_GPIO_PIN(BUTTON_F_NODE, gpios), ret);
             } else if (1 == ret) {
-                LOG_INFO("Button F pressed at %u", k_cycle_get_32());
+                g_button_callback(BOARD_BUTTON_KEY_F, BUTTON_ACTION_PREASSED);
             } else {
-                LOG_INFO("Button F released at %u", k_cycle_get_32());
+                g_button_callback(BOARD_BUTTON_KEY_F, BUTTON_ACTION_RELEASED);
             }
             break;
         case BIT(DT_GPIO_PIN(BUTTON_P_NODE, gpios)):
@@ -176,9 +182,9 @@ static void board_button_handler(const struct device *dev, struct gpio_callback 
             if (ret < 0) {
                 LOG_ERROR("Failed to get pin %d state (err %d)", DT_GPIO_PIN(BUTTON_P_NODE, gpios), ret);
             } else if (1 == ret) {
-                LOG_INFO("Button P pressed at %u", k_cycle_get_32());
+                g_button_callback(BOARD_BUTTON_KEY_P, BUTTON_ACTION_PREASSED);
             } else {
-                LOG_INFO("Button P released at %u", k_cycle_get_32());
+                g_button_callback(BOARD_BUTTON_KEY_P, BUTTON_ACTION_RELEASED);
             }
             break;
         default:
@@ -187,7 +193,7 @@ static void board_button_handler(const struct device *dev, struct gpio_callback 
     }
 }
 
-static void board_button_init(button_t *p_button, bool low_latency)
+static void board_button_init(button_key_t *p_button, bool low_latency)
 {
     int err;
     const struct device *button;
@@ -286,23 +292,7 @@ static void board_rocker_init(rocker_axis_t *p_axis)
     LOG_INFO("Set up Axis at %s pin %d", p_axis->adc_name, p_axis->adc_channel);
 }
 
-static void board_rocker_convert(int32_t ref_mv, enum adc_gain gain,
-                                    uint8_t resolution, int16_t raw_value)
-{
-    int err;
-    int32_t value;
-
-    value = raw_value;
-    err = adc_raw_to_millivolts(ref_mv, gain, resolution, &value);
-    if (err) {
-        LOG_ERROR("Cannot convert ADC value (err %d)", err);
-        return;
-    }
-
-    LOG_INFO("ADC raw %d ~ %d mV", raw_value, value);
-}
-
-void board_init(void)
+void board_init(board_button_callback callback)
 {
     int index;
 
@@ -316,6 +306,8 @@ void board_init(void)
     /* Initialize the rocker */
     board_rocker_init(&axis_x);
     board_rocker_init(&axis_y);
+
+    g_button_callback = callback;
 }
 
 void board_button_scan(void)
@@ -341,29 +333,51 @@ void board_button_scan(void)
     }
 }
 
-void board_rocker_read(axis_val_t *axis_val)
+int16_t board_rocker_read(axis_t axis)
 {
     int err;
+    int16_t raw_value;
+    int32_t voltage;
+    rocker_axis_t *p_rocker_axis;
     const struct device *device;
     struct adc_sequence adc_seq = {0};
 
-    device = device_get_binding(axis_x.adc_name);
-    if (device == NULL) {
-        LOG_ERROR("Cannot find %s ADC device", axis_x.adc_name);
-        return;
+    switch (axis) {
+        case BOARD_ROCKER_AXIS_X:
+            p_rocker_axis = &axis_x;
+            break;
+        case BOARD_ROCKER_AXIS_Y:
+            p_rocker_axis = &axis_y;
+            break;
+        default:
+            LOG_ERROR("Unknown axis %d", axis);
+            return -1;
     }
 
-    adc_seq.channels = BIT(axis_y.adc_index) | BIT(axis_x.adc_index);
-    adc_seq.buffer = &axis_val;
-    adc_seq.buffer_size = sizeof(axis_val);
+    device = device_get_binding(p_rocker_axis->adc_name);
+    if (device == NULL) {
+        LOG_ERROR("Cannot find %s ADC device", axis_x.adc_name);
+        return -1;
+    }
+
+    adc_seq.channels = BIT(p_rocker_axis->adc_index);
+    adc_seq.buffer = &raw_value;
+    adc_seq.buffer_size = sizeof(raw_value);
     adc_seq.resolution = 10;
     adc_seq.calibrate = true;
     err = adc_read(device, &adc_seq);
     if (err) {
         LOG_ERROR("Cannot read ADC device (err %d)", err);
-        return;
+        return -1;
     }
 
-    //board_rocker_convert(adc_ref_internal(device), ADC_GAIN_1_3, adc_seq.resolution, axis_val->axis_x_raw);
-    board_rocker_convert(adc_ref_internal(device), ADC_GAIN_1_3, adc_seq.resolution, axis_val->axis_y_raw);
+    voltage = raw_value;
+    err = adc_raw_to_millivolts(adc_ref_internal(device), ADC_GAIN_1_3, adc_seq.resolution, &voltage);
+    if (err) {
+        LOG_ERROR("Cannot convert ADC value (err %d)", err);
+        return -1;
+    }
+
+    LOG_INFO("ADC raw %d ~ %d mV", raw_value, voltage);
+    return raw_value;
 }

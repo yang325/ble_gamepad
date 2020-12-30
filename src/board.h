@@ -4,13 +4,30 @@
 #include <inttypes.h>
 #include <zephyr.h>
 
-typedef struct {
-    int16_t axis_x_raw;
-    int16_t axis_y_raw;
-} __attribute__((packed)) axis_val_t;
+typedef enum {
+    BOARD_ROCKER_AXIS_X,
+    BOARD_ROCKER_AXIS_Y,
+} axis_t;
 
-void board_init(void);
+typedef enum {
+    BOARD_BUTTON_KEY_A,
+    BOARD_BUTTON_KEY_B,
+    BOARD_BUTTON_KEY_C,
+    BOARD_BUTTON_KEY_D,
+    BOARD_BUTTON_KEY_E,
+    BOARD_BUTTON_KEY_F,
+    BOARD_BUTTON_KEY_P,
+} button_t;
+
+typedef enum {
+    BUTTON_ACTION_PREASSED,
+    BUTTON_ACTION_RELEASED,
+} action_t;
+
+typedef void (*board_button_callback)(button_t button, action_t action);
+
+void board_init(board_button_callback callback);
 void board_button_scan(void);
-void board_rocker_read(axis_val_t *axis_val);
+int16_t board_rocker_read(axis_t axis);
 
 #endif
